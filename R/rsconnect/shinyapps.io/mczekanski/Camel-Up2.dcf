@@ -1,0 +1,12 @@
+name: Camel-Up2
+title: Camel-Up2
+username:
+account: mczekanski
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 943836
+bundleId: 2290173
+url: https://mczekanski.shinyapps.io/Camel-Up2/
+when: 1564963392.11658
+asMultiple: FALSE
+asStatic: FALSE
