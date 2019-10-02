@@ -5,6 +5,9 @@
 #' @importFrom parallel detectCores
 
 #' @title Generate CamelUp UI
+#' @import parallel
+#'
+#' @export
 #' @return a shiny ui object
 generateUI <- function(){
   ui <- fluidPage(
@@ -66,7 +69,7 @@ generateUI <- function(){
                                          c("Move Camel","Place Leg Bet","Place Tile","Place Overall Bet"),
                                          selected = "Move Camel"),
                              sliderInput("nSims", "Select Number of Simulations",
-                                         min = 1, max = 100000, value = 500),
+                                         min = 100, max = 100000, value = 500, step = 100),
                              actionButton('Sim',
                                           "Simulate!"),
                              conditionalPanel(condition = "input.simMove == 'Place Leg Bet'",
@@ -144,6 +147,7 @@ generateUI <- function(){
 #' @import data.table
 #' @import parallel
 server <- function(input, output) {
+  set.seed(1)
   nPlayers <- NULL
   nPlayers <- shinyalert::shinyalert(title = "input number of players",
                                      type = "input",
@@ -283,7 +287,7 @@ server <- function(input, output) {
                                            game$simNGames(action, input$nSims)
                                          })
                                          # force(game)
-                                         variables$simTime <- paste("Simulation took", floor(time[3]), "seconds. Using", detectCores() - 1, "cores.")
+                                         variables$simTime <- paste("Simulation took", floor(time[3]), "seconds. Using",  parallel::detectCores() - 1, "cores.")
                                        })
 
                                        output$simTime <- renderText(variables$simTime)
@@ -313,7 +317,7 @@ server <- function(input, output) {
                                          print("print(input$vLinesBool)")
                                          # print(input$vLinesBool) ####################################
                                          game$createSimGraphs(input$simColor, simTurnString(), input$nSims, input$vLinesBool) #####HERE
-                                       })
+                                       }, width = 800)
 
                                        observeEvent(input$clearBoard, {
                                          print("test")
