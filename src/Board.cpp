@@ -41,6 +41,7 @@ Board::Board(int n, bool d){
 
 Board::Board(const Board & b){
   // Rcout << "copy board";
+  debug = b.debug; // ensure that debug is set
   colors = b.colors;
   nSpaces = b.nSpaces;
   Space * currentNewSpace;
