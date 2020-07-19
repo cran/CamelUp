@@ -1,6 +1,7 @@
 #include <Rcpp.h>
 #include "Simulator.h"
 #include "Board.h"
+#include "Game.h"
 
 
 using namespace Rcpp;
@@ -21,6 +22,21 @@ using namespace Rcpp;
 Simulator::Simulator(const Board & b){
   boardObject = Board(b);
 }
+//
+// Simulator::Simulator(int n){
+//   boardObject = Board(19);
+// }
+
+// Simulator::Simulator(Game g){
+//   // Rcout << "step1";
+//   Board b = *(g.getBoardPtr());
+//   // Rcout << "step1\n";
+//   boardObject = Board(b);
+// //   Rout << "step 1\n";
+// //   shared_ptr<Board> temp = g.getBoard();
+// //   Rout << "step 2\n";
+// //   boardObject = Board(*temp);
+// }
 
 void Simulator::SimTask(Board *b, int id, bool toEndLeg, Rcpp::CharacterVector *colors, Rcpp::IntegerVector *spaces, Rcpp::IntegerVector * heights, Rcpp::CharacterVector* simRankings){
   if(toEndLeg){
@@ -46,9 +62,9 @@ List Simulator::simulateDecision(bool toEndLeg, int nSims){
   int vecLength = nSims*nCamels;
   Board * boardPtr = &boardObject;
 
-  Rcpp::CharacterVector *camelColors = new CharacterVector(vecLength);
-  Rcpp::IntegerVector *spaceVec = new IntegerVector(vecLength);
-  Rcpp::IntegerVector *heightVec = new IntegerVector(vecLength);
+  Rcpp::CharacterVector camelColors = CharacterVector(vecLength);
+  Rcpp::IntegerVector spaceVec = IntegerVector(vecLength);
+  Rcpp::IntegerVector heightVec = IntegerVector(vecLength);
 
   // Rcpp::CharacterVector *firstPlace = new CharacterVector(nSims);
   // Rcpp::CharacterVector *secondPlace = new CharacterVector(nSims);
@@ -56,7 +72,7 @@ List Simulator::simulateDecision(bool toEndLeg, int nSims){
   // Rcpp::CharacterVector *fourthPlace = new CharacterVector(nSims);
   // Rcpp::CharacterVector *lastPlace = new CharacterVector(nSims);
 
-  Rcpp::CharacterVector *simRankings = new CharacterVector(5*nSims); // num camels times num sims
+  Rcpp::CharacterVector simRankings = CharacterVector(5*nSims); // num camels times num sims
 
 
   std::vector<Board> duplicateGames;
@@ -67,24 +83,24 @@ List Simulator::simulateDecision(bool toEndLeg, int nSims){
 
   for(int i=0; i<nSims; i++){
     Board tempBoard = duplicateGames[i];
-    SimTask(&tempBoard, i, toEndLeg, camelColors, spaceVec, heightVec, simRankings);
+    SimTask(&tempBoard, i, toEndLeg, &camelColors, &spaceVec, &heightVec, &simRankings);
 
   }
 
 
-  DataFrame positionDF = DataFrame::create(Named("Color") = *camelColors, Named("Space") = *spaceVec, Named("Height") = *heightVec);
-  DataFrame rankingDF = DataFrame::create(Named("Color") = *simRankings); // it's clear here that the ordering is 1st through 5th repeated nSims times
+  DataFrame positionDF = DataFrame::create(Named("Color") = camelColors, Named("Space") = spaceVec, Named("Height") = heightVec);
+  DataFrame rankingDF = DataFrame::create(Named("Color") = simRankings); // it's clear here that the ordering is 1st through 5th repeated nSims times
   return List::create(Named("position") = positionDF, Named("ranking") = rankingDF);
 }
 
 
 //
-RCPP_EXPOSED_CLASS(Simulator)
-  RCPP_MODULE(simulator_cpp) {
-    using namespace Rcpp;
+RCPP_MODULE(simulator_cpp) {
+  using namespace Rcpp;
 
-    class_<Simulator>("Simulator")
-      .constructor<Board>()
-      .method("simulateDecision", &Simulator::simulateDecision)
-    ;
-  }
+  class_<Simulator>("Simulator")
+    // .constructor<Game>()
+    .constructor<const Board &>()
+    .method("simulateDecision", &Simulator::simulateDecision)
+  ;
+}

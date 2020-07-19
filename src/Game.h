@@ -3,6 +3,7 @@
 
 #include <Rcpp.h>
 #include <stack>
+#include <memory>
 #include "Player.h"
 #include "Board.h"
 #include "LegBet.h"
@@ -12,25 +13,27 @@ using namespace Rcpp;
 
 class Game {
 private:
-  std::vector<Player*> players;
-  Board* board;
-  std::map<std::string, std::stack<LegBet*>> legBets; // each color has a stack, all contained in a map
+  std::vector<std::shared_ptr<Player>> players;
+  shared_ptr<Board> board;
+  std::map<std::string, std::stack<std::shared_ptr<LegBet>>> legBets; // each color has a stack, all contained in a map
   std::vector<std::string> colors;
   std::vector<std::string> rankings;
   int currentPlayerIndex;
-  std::vector<LegBet*> madeLegBets;
+  std::vector<std::shared_ptr<LegBet>> madeLegBets;
   bool isGameOver;
   int nSpaces;
   bool debug;
 
-  std::stack<Player *> overallWinnerStack;
-  std::stack<Player *> overallLoserStack;
+  std::stack<std::shared_ptr<Player>> overallWinnerStack;
+  std::stack<std::shared_ptr<Player>> overallLoserStack;
 public:
   Game();
 
   Game(int nSpaces, int nPlayers, bool d);
 
   Game(const Game & g);
+
+  ~Game(){}
 
   DataFrame getPurseDF();
 
@@ -72,7 +75,9 @@ public:
 
   // void progressToEndLeg();
 
-  Board * getBoard();
+  std::shared_ptr<Board> getBoardPtr();
+
+  Board getBoard();
 
   Game newGameObj(Game g);
 

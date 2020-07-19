@@ -1,3 +1,9 @@
+# CamelUp 2.0.2
+Resolved remaining memory leak issues.
+
+# CamelUp 2.0.1
+Resolved some memory leak issues.
+
 # CamelUp 2.0.0
 The entire app has been re-implemented using Rcpp so that simulations are significantly faster.
 

@@ -1,3 +1,5 @@
+context("board")
+library(CamelUp)
 test_that("test board: constructor", {
   b <- Board$new(19, FALSE)
   expect_equal(b$getNDiceRemaining(), 5)

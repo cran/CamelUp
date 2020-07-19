@@ -1,5 +1,6 @@
 #include <Rcpp.h>
 #include <stack>
+#include <memory>
 #include "Player.h"
 #include "LegBet.h"
 using namespace Rcpp;
@@ -24,7 +25,7 @@ LegBet::LegBet(std::string color, int v){
   value = v;
 }
 
-void LegBet::makeBet(Player * p) {
+void LegBet::makeBet(std::shared_ptr<Player> p) {
   person = p;
 }
 

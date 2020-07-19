@@ -15,6 +15,8 @@ private:
   std::string overallFirstPlaceColor;
   std::string overallLastPlaceColor;
 public:
+  Player();
+
   Player(std::string n);
 
   Player(const Player & p);

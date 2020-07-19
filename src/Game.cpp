@@ -7,8 +7,11 @@
 #include "Camel.h"
 #include "Die.h"
 #include "Space.h"
+#include <memory>
 
 using namespace Rcpp;
+
+std::vector<int> kBetValues = {2,3,5};
 
 // Define space class
 
@@ -29,10 +32,10 @@ Game::Game(int n, int nPlayers, bool d){
   debug = d;
   isGameOver = false;
   colors = {"Green", "White", "Yellow", "Orange", "Blue"};
-  board = new Board(nSpaces, d);
+  board = make_shared<Board>(nSpaces, d);
 
   for(int i=0;i<nPlayers;i++){
-    players.push_back(new Player("Player " + toString(i)));
+    players.push_back(std::make_shared<Player>("Player " + toString(i)));
   }
 
   currentPlayerIndex = 0;
@@ -62,7 +65,7 @@ Game::Game(const Game & g){
   // create identical players
   int nPlayers = g.players.size();
   for(int i=0;i<nPlayers;i++){
-    players.push_back(new Player("Player " + toString(i)));
+    players.push_back(std::make_shared<Player>("Player " + toString(i)));
   }
 
   //
@@ -73,7 +76,7 @@ Game::Game(const Game & g){
   // }
   // //
 
-  board = new Board(*g.board);
+  board = make_shared<Board>(*g.board);
 
   // Board* oldBoard = g.board;
 
@@ -112,7 +115,7 @@ DataFrame Game::getPurseDF(){
 
   int nPlayers = players.size();
   for(int i=0;i<nPlayers;i++){
-    Player* currentPlayer = players[i];
+    std::shared_ptr<Player> currentPlayer = players[i];
     names.push_back((*currentPlayer).getName());
     purseValues.push_back((*currentPlayer).getCoins());
   }
@@ -133,7 +136,7 @@ std::vector<std::string> Game::getRanking(){
 
 std::string Game::takeTurnMove(){
   // Rcout << "takeTurnMove called \n";
-  Player* currentPlayer = players[currentPlayerIndex];
+  std::shared_ptr<Player> currentPlayer = players[currentPlayerIndex];
   // Rcout << "currentPlayer found \n";
   std::string result = (*board).moveTurn();
   // Rcout << "Board moved \n";
@@ -146,17 +149,18 @@ std::string Game::takeTurnMove(){
 }
 
 void Game::resetLegBets(){
-  std::vector<int> betValues = {2, 3, 5};
-  int nLegBets = betValues.size();
+  // std::vector<int> kBetValues = {2, 3, 5};
+  int nLegBets = kBetValues.size();
 
   int nColors = colors.size();
   std::string currentColor;
   for(int i=0; i<nColors; i++){
     currentColor = colors[i];
     // std::stack<LegBet*> tempStack;
-    std::stack<LegBet*> betStack;
+    std::stack<std::shared_ptr<LegBet>> betStack;
     for(int j=0; j<nLegBets; j++){
-      betStack.push(new LegBet(currentColor, betValues[j]));
+      std::shared_ptr<LegBet> newBet(new LegBet(currentColor, kBetValues[j]));
+      betStack.push(newBet);
     }
     // std::stack<LegBet*>* betStack = * tempStack;
     legBets[currentColor] = betStack; // & gets address of object
@@ -172,9 +176,9 @@ DataFrame Game::getLegBetDF(){
   int nColors = colors.size();
   for(int i=0;i<nColors;i++){
     std::string currentColor = colors[i];
-    std::stack<LegBet*>* s = &legBets[currentColor];
+    std::stack<std::shared_ptr<LegBet>>* s = &legBets[currentColor];
 
-    LegBet* nextBet = (*s).top();
+    std::shared_ptr<LegBet> nextBet = (*s).top();
     nextBetValues.push_back((*nextBet).getValue());
     nBetsLeft.push_back((*s).size());
   }
@@ -184,10 +188,10 @@ DataFrame Game::getLegBetDF(){
 }
 
 void Game::takeTurnLegBet(std::string camelColor){
-  Player* currentPlayer = players[currentPlayerIndex];
+  std::shared_ptr<Player> currentPlayer = players[currentPlayerIndex];
 
-  std::stack<LegBet*>* colorStack = &legBets[camelColor];
-  LegBet* betToMake = (*colorStack).top();
+  std::stack<std::shared_ptr<LegBet>>* colorStack = &legBets[camelColor];
+  std::shared_ptr<LegBet> betToMake = (*colorStack).top();
   (*colorStack).pop();
   (*betToMake).makeBet(currentPlayer);
   madeLegBets.push_back(betToMake);
@@ -202,7 +206,7 @@ void Game::evaluateLegBets(){
   // (*cp).addCoins(21);
   int nBets = madeLegBets.size();
   for(int i=0; i<nBets; i++){
-    LegBet* currentBet = madeLegBets[i];
+    std::shared_ptr<LegBet> currentBet = madeLegBets[i];
     (*currentBet).evaluate(rankings[0], rankings[1]);
   }
 }
@@ -242,7 +246,7 @@ bool Game::checkIsGameOver(){
 }
 
 void Game::takeTurnPlaceTile(int n, bool plus){
-  Player* currentPlayer = players[currentPlayerIndex];
+  std::shared_ptr<Player> currentPlayer = players[currentPlayerIndex];
   if(plus){
     (*board).placePlusTile(n, currentPlayer);
   } else {
@@ -252,7 +256,7 @@ void Game::takeTurnPlaceTile(int n, bool plus){
 
 int Game::getFirstPlaceSpace(){
   getRanking();
-  Camel* firstPlace = (*board).getCamel(rankings[0]);
+  std::shared_ptr<Camel> firstPlace = (*board).getCamel(rankings[0]);
   return (*firstPlace).getSpace();
 }
 
@@ -272,7 +276,7 @@ void Game::progressToEndGame(){
 
 
 void Game::takeTurnPlaceOverallWinner(std::string color){
-  Player* currentPlayer = players[currentPlayerIndex];
+  std::shared_ptr<Player> currentPlayer = players[currentPlayerIndex];
   (*currentPlayer).setOverallFirst(color);
   overallWinnerStack.push(currentPlayer);
 
@@ -284,7 +288,7 @@ int Game::getNOverallWinnersPlaced(){
 }
 
 void Game::takeTurnPlaceOverallLoser(std::string color){
-  Player* currentPlayer = players[currentPlayerIndex];
+  std::shared_ptr<Player> currentPlayer = players[currentPlayerIndex];
   (*currentPlayer).setOverallLast(color);
   overallLoserStack.push(currentPlayer);
 
@@ -304,7 +308,7 @@ void Game::evaluateOverallBets(){
   last = rankings[4];
 
   int nWinnerBets = getNOverallWinnersPlaced();
-  Player * currentPlayer;
+  std::shared_ptr<Player> currentPlayer;
   std::string camelColor;
   int nCorrect = 0;
   for(int i=0;i<nWinnerBets;i++){
@@ -353,8 +357,12 @@ void Game::evaluateOverallBets(){
 //   }
 // }
 
-Board * Game::getBoard(){
+std::shared_ptr<Board> Game::getBoardPtr(){
   return board;
+}
+
+Board Game::getBoard(){
+  return *board;
 }
 
 Game Game::newGameObj(Game g){
@@ -371,6 +379,8 @@ DataFrame Game::getDiceRemDF(){
   DataFrame df = DataFrame::create(Named("Dice_Remaining") = remaining);
   return df;
 }
+
+
 
 // Approach 4: Module docstrings
 //

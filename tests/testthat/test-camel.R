@@ -1,3 +1,5 @@
+context("camel")
+library(CamelUp)
 test_that("test camel: constructor", {
   c <- Camel$new("Blue")
   expect_equal(c$getColor(), "Blue")

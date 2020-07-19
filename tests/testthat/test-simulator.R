@@ -1,6 +1,7 @@
 test_that("test simulator: constructor", {
   set.seed(1)
   g <- Game$new(19, 3, TRUE)
+  Game$new(g)
   b <- g$getBoard()
   s <- Simulator$new(b)
   s$simulateDecision(FALSE, 1)

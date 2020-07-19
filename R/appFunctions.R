@@ -301,8 +301,8 @@ server <- function(input, output){
 
   # sim panel
   observeEvent(input$copyPlayBoard, {
-    simBoard <- gamePlay$getBoard()
-    output$boardToSim <- renderPlot(makeBoardGraph(simBoard$getCamelDF()))
+    # simBoard <- gamePlay$getBoard()
+    output$boardToSim <- renderPlot(makeBoardGraph(gamePlay$getCamelDF()))
   })
   observeEvent(input$copyCustomBoard, {
     simBoard <- customBoard

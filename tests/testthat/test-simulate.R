@@ -28,7 +28,7 @@ test_that("simulateMoveNTimes",{
   g <- Game$new(19, 3, FALSE)
   print("timing simulateMoveNTimes: 1000 sims (0.9s)")
   t <- system.time({
-     a <- simulateMoveNTimes(g, 1000)
+     a <- simulateMoveNTimes(g, 10)
   })
   print(t)
   # simulateMoveNTimes(g, 3)

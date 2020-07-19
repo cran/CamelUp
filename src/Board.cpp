@@ -5,6 +5,7 @@
 #include "Board.h"
 #include "Camel.h"
 #include <random>     // for random shuffle
+#include <memory> // shared pointers
 using namespace Rcpp;
 using namespace std;
 // Define board class
@@ -31,7 +32,7 @@ Board::Board(int n, bool d){
   int LengthNeeded = n + 1; // make sure there are enough spaces after th finish line
   // and index is equal to space number
   for(int i=0;i<LengthNeeded;i++){
-    spaces.push_back(new Space(i));
+    spaces.push_back(std::shared_ptr<Space>(std::make_shared<Space>(i)));
   }
 
   resetDice();
@@ -44,15 +45,12 @@ Board::Board(const Board & b){
   debug = b.debug; // ensure that debug is set
   colors = b.colors;
   nSpaces = b.nSpaces;
-  Space * currentNewSpace;
-  Space * currentOldSpace;
-  Camel * currentCamel;
-  std::stack<Camel*> tempCamelStack;
+
+  std::stack<std::shared_ptr<Camel>> tempCamelStack;
   std::string currentColor;
   int nCamelsHere;
 
-  Player* temp = new Player("Temp");
-
+  std::shared_ptr<Player> temp = std::make_shared<Player>("Temp");
   // std::vector<Space*> spaces;
 
   int LengthNeeded = nSpaces + 1;
@@ -61,10 +59,10 @@ Board::Board(const Board & b){
   for(int i=0;i<LengthNeeded;i++){
     // Rcout << "Space: \n";
     // Rcout << i;
-    currentOldSpace = b.spaces[i];
+    std::shared_ptr<Space> currentOldSpace = b.spaces[i];
     // std::vector<std::string> camelsToCopy = (*currentOldSpace).getCamelStrings();
     nCamelsHere = (*currentOldSpace).getNCamels();
-    currentNewSpace = new Space(i); // shouldn't need additional constructor?
+    std::shared_ptr<Space> currentNewSpace = std::shared_ptr<Space>(std::make_shared<Space>(i)); // shouldn't need additional constructor?
 
     if((*currentOldSpace).getPlusTile()){
       (*currentNewSpace).setPlusTile(temp);
@@ -75,16 +73,16 @@ Board::Board(const Board & b){
 
 
     for(int j=0;j<nCamelsHere;j++){
-      currentCamel = (*currentOldSpace).removeCamel();
+      std::shared_ptr<Camel> currentCamel = (*currentOldSpace).removeCamel();
       tempCamelStack.push(currentCamel);
     }
     // Rcout << "\n second for loop \n";
     for(int j=0;j<nCamelsHere;j++){
-      currentCamel = tempCamelStack.top();
+      std::shared_ptr<Camel> currentCamel = tempCamelStack.top();
       tempCamelStack.pop();
       (*currentOldSpace).addCamel(currentCamel);
       currentColor = (*currentCamel).getColor();
-      currentCamel = new Camel(currentColor);
+      currentCamel = std::shared_ptr<Camel>(std::make_shared<Camel>(currentColor));
 
       (*currentNewSpace).addCamel(currentCamel);
       camels[currentColor] = currentCamel;
@@ -111,6 +109,8 @@ Board::Board(const Board & b){
 
   // Rcout << "\n done copying board \n";
 }
+
+
 
 int Board::getNDiceRemaining(){
   return dice.size();
@@ -152,7 +152,6 @@ void Board::fillCamelPosArrays(Rcpp::CharacterVector *camelColors, Rcpp::Integer
   int nCamels = colors.size();
   int index;
   std::string currentColor;
-  Camel * currentCamel;
   // Rcout << "entering for loop \n";
   for(int i=0;i<nCamels;i++){
     // Rcout << i;
@@ -160,7 +159,7 @@ void Board::fillCamelPosArrays(Rcpp::CharacterVector *camelColors, Rcpp::Integer
     currentColor = colors[i];
     // Rcout << "camel to be fetched \n";
     if(camels.find(currentColor) != camels.end()){ // if camel is in camels
-      currentCamel = camels[currentColor];
+      std::shared_ptr<Camel> currentCamel = camels[currentColor];
       // Rcout << "camel fetched";
       // Rcout << currentCamel;
       // Rcout << (*currentCamel).getColor();
@@ -176,16 +175,16 @@ void Board::fillCamelPosArrays(Rcpp::CharacterVector *camelColors, Rcpp::Integer
 DataFrame Board::getCamelDF(){
   // DataFrame df;
 
-  Rcpp::CharacterVector * camelColors = new CharacterVector(5);
-  Rcpp::IntegerVector * spaceVec = new IntegerVector(5);
-  Rcpp::IntegerVector * heightVec = new IntegerVector(5);
+  Rcpp::CharacterVector camelColors = CharacterVector(5);
+  Rcpp::IntegerVector spaceVec = IntegerVector(5);
+  Rcpp::IntegerVector heightVec = IntegerVector(5);
 
   if(!camels.empty()){
-    fillCamelPosArrays(camelColors, spaceVec, heightVec, 0);
+    fillCamelPosArrays(&camelColors, &spaceVec, &heightVec, 0);
   }
 
 
-  DataFrame df = DataFrame::create(Named("Color") = *camelColors, Named("Space") = *spaceVec, Named("Height") = *heightVec);
+  DataFrame df = DataFrame::create(Named("Color") = camelColors, Named("Space") = spaceVec, Named("Height") = heightVec);
 
   return df;
 
@@ -202,17 +201,17 @@ std::string Board::moveTurn(){
   int dieValue = currentDie.roll();
   // Rcout << "Die rolled \n";
 
-  Camel * camelToMove = camels[camelColor];
+  std::shared_ptr<Camel>  camelToMove = camels[camelColor];
   int currentSpaceNum = (*camelToMove).getSpace();
   int currentHeight = (*camelToMove).getHeight();
   // Rcout << "got currentHeight \n";
 
-  Space * currentSpace = spaces[currentSpaceNum];
+  std::shared_ptr<Space> currentSpace = spaces[currentSpaceNum];
   int currentNCamels = (*currentSpace).getNCamels();
   // Rcout << "got currentNCamels \n";
 
 
-  std::stack<Camel *> temp;
+  std::stack<std::shared_ptr<Camel>> temp;
 
   for(int i=currentHeight; i<=currentNCamels; i++){
     temp.push((*currentSpace).removeCamel());
@@ -232,25 +231,25 @@ std::string Board::moveTurn(){
   // Rcout << dieValue;
   // Rcout << "\n";
 
-  Space* newSpace = spaces[newSpaceNum];
+  std::shared_ptr<Space> newSpace = spaces[newSpaceNum];
   // Rcout << "newSpace position correct: \n";
   // Rcout << newSpaceNum;
   // Rcout << "\n newSpace position actual: \n";
   // Rcout << (*newSpace).getPosition();
   // Rcout << "\n tempsize: \n";
   // Rcout << temp.size();
-  Player* p = (*newSpace).getTilePlacedBy(); // player that placed the relevant tile
+  std::shared_ptr<Player> p = (*newSpace).getTilePlacedBy(); // player that placed the relevant tile
   // Rcout << "tile found";
   //  account for tiles
   if((*newSpace).getPlusTile()){
     // Rcout << "(*newSpace).getPlusTile() \n";
-    Space* newSpace = spaces[currentSpaceNum + dieValue + 1];
+    std::shared_ptr<Space> newSpace = spaces[currentSpaceNum + dieValue + 1];
     // Rcout << (*newSpace).getPosition();
     (*newSpace).addCamelsTop(temp);
     (*p).addCoins(1);
   } else if((*newSpace).getMinusTile()){
     // Rcout << "if((*newSpace).getMinusTile()) \n";
-    Space* newSpace = spaces[currentSpaceNum + dieValue - 1];
+    std::shared_ptr<Space> newSpace = spaces[currentSpaceNum + dieValue - 1];
     // Rcout << (*newSpace).getPosition();
     (*newSpace).addCamelsBottom(temp);
     (*p).addCoins(1);
@@ -270,18 +269,18 @@ std::string Board::moveTurn(){
 void Board::generateRanking(){
   ranking.clear();
   for(int i=nSpaces;i>=0;i--){
-    Space* currentSpace = spaces[i];
+    std::shared_ptr<Space> currentSpace = spaces[i];
     int nCamelsHere = (*currentSpace).getNCamels();
     if(nCamelsHere > 0){
-      std::stack<Camel*> temp;
+      std::stack<std::shared_ptr<Camel> > temp;
       for(int i=0; i<nCamelsHere; i++){
-        Camel* c = (*currentSpace).removeCamel();
+        std::shared_ptr<Camel>  c = (*currentSpace).removeCamel();
         ranking.push_back((*c).getColor());
         temp.push(c);
       }
 
       for(int i=0; i<nCamelsHere; i++){
-        Camel* c = temp.top();
+        std::shared_ptr<Camel> c = temp.top();
         temp.pop();
         (*currentSpace).addCamel(c);
       }
@@ -294,21 +293,21 @@ std::vector<std::string> Board::getRanking(){
   return ranking;
 }
 
-Camel* Board::getCamel(std::string color){
+std::shared_ptr<Camel>  Board::getCamel(std::string color){
   return camels[color];
 }
 
-void Board::placePlusTile(int n, Player* p){
-  Space* relevantSpace = spaces[n];
+void Board::placePlusTile(int n, std::shared_ptr<Player> p){
+  std::shared_ptr<Space> relevantSpace = spaces[n];
   (*relevantSpace).setPlusTile(p);
 }
 
-void Board::placeMinusTile(int n, Player* p){
-  Space* relevantSpace = spaces[n];
+void Board::placeMinusTile(int n, std::shared_ptr<Player> p){
+  std::shared_ptr<Space> relevantSpace = spaces[n];
   (*relevantSpace).setMinusTile(p);
 }
 
-Space* Board::getSpaceN(int n){
+std::shared_ptr<Space> Board::getSpaceN(int n){
   return spaces[n];
 }
 
@@ -322,7 +321,7 @@ void Board::setDice(std::vector<Die> d){
 
 int Board::getFirstPlaceSpace(){
   std::vector<std::string> ranking = getRanking();
-  Camel* firstPlace = camels[ranking[0]];
+  std::shared_ptr<Camel>  firstPlace = camels[ranking[0]];
   return (*firstPlace).getSpace();
 }
 
@@ -355,7 +354,7 @@ void Board::clearBoard(){
   int LengthNeeded = nSpaces + 1;
   spaces.clear();
   for(int i=0;i<LengthNeeded;i++){
-    spaces.push_back(new Space(i));
+    spaces.push_back(std::shared_ptr<Space>(std::make_shared<Space>(i)));
   }
 
   camels.clear();
@@ -368,8 +367,8 @@ void Board::createAddCamel(std::string color, int space){
   // Rcout << "\n";
   // Rcout << space;
   // Rcout << "\n";
-  Camel * currentCamel = new Camel(color);
-  Space * currentSpace = spaces[space];
+  std::shared_ptr<Camel> currentCamel(std::make_shared<Camel>(color));
+  std::shared_ptr<Space> currentSpace = spaces[space];
   // Rcout << (*currentSpace).getNCamels();
   // Rcout << "\n";
   (*currentSpace).addCamel(currentCamel);
@@ -410,8 +409,8 @@ RCPP_MODULE(board_cpp){
   .method("generateRanking", &Board::generateRanking)
   .method("getRanking", &Board::getRanking)
   .method("clearBoard", &Board::clearBoard)
-  .method("placePlusTile", &Board::placePlusTile)
-  .method("placeMinusTile", &Board::placeMinusTile)
+  // .method("placePlusTile", &Board::placePlusTile)
+  // .method("placeMinusTile", &Board::placeMinusTile)
   .method("addCustomCamel", &Board::addCustomCamel)
   // .method("getDiceDF", &Board::getDiceDF)
   ;
