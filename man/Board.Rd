@@ -12,7 +12,7 @@ Type the name of the class to see its methods
 \item{\code{new}}{Constructor}
 
 \item{\code{mult}}{Multiply by another Double object \itemize{
-\item Paramter: other - The other Double object
+\item Parameter: other - The other Double object
 \item Returns: product of the values
 }}
 }}

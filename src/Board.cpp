@@ -4,7 +4,6 @@
 #include "Space.h"
 #include "Board.h"
 #include "Camel.h"
-#include <random>     // for random shuffle
 #include <memory> // shared pointers
 using namespace Rcpp;
 using namespace std;
@@ -12,12 +11,14 @@ using namespace std;
 
 inline int randWrapper(const int n) { return floor(unif_rand()*n); }
 
+
+
 //' @name Board
 //' @title Encapsulates a double
 //' @description Type the name of the class to see its methods
 //' @field new Constructor
 //' @field mult Multiply by another Double object \itemize{
-//' \item Paramter: other - The other Double object
+//' \item Parameter: other - The other Double object
 //' \item Returns: product of the values
 //' }
 //' @export
@@ -102,15 +103,28 @@ Board::Board(const Board & b){
 
   //unsigned seed = 0;
 
-  std::random_shuffle(dice.begin(), dice.end(), randWrapper);// need to shuffle dice
-  // Rcout << "\n copying dice  complete \n";
+  shuffleDice(); // need to shuffle dice
   getRanking();
-  // Rcout << "ranking complete";
-
-  // Rcout << "\n done copying board \n";
 }
 
+void Board::shuffleDice(){
+  GetRNGstate();
+  std::vector<Die> newDice;
+  int nDice = dice.size();
 
+  std::vector<pair<double, int>> samples;
+  for(int i=0; i<nDice; i++){
+    samples.push_back(make_pair(unif_rand(), i));
+  }
+
+  sort(samples.begin(), samples.end());
+  for(int i=0; i<nDice; i++){
+    newDice.push_back(dice[samples[i].second]);
+  }
+  PutRNGstate();
+
+  dice = newDice;
+}
 
 int Board::getNDiceRemaining(){
   return dice.size();
@@ -126,8 +140,7 @@ void Board::resetDice(){ // can't define default arg twice
   //shuffle dice
   // this is necessary because R can't set this seed
   if(!debug){
-    unsigned seed = 0;
-    shuffle(dice.begin(), dice.end(), std::default_random_engine(seed)); //shuffle dice
+    shuffleDice();
   }
 }
 
@@ -381,9 +394,7 @@ void Board::addCustomCamel(std::string color, int space, bool diePresent, int nB
     dice.push_back(Die(color));
   }
 
-  // unsigned seed = 0;
-  // shuffle(dice.begin(), dice.end(), std::default_random_engine(seed)); //shuffle dice
-  std::random_shuffle(dice.begin(), dice.end(), randWrapper);
+  shuffleDice();
 
 }
 

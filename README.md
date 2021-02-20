@@ -7,6 +7,8 @@
 
 [![Travis build
 status](https://travis-ci.org/mczekanski1/Camel-Up.svg?branch=master)](https://travis-ci.org/mczekanski1/Camel-Up)
+[![Codecov test
+coverage](https://codecov.io/gh/mczekanski1/Camel-Up/branch/master/graph/badge.svg)](https://codecov.io/gh/mczekanski1/Camel-Up?branch=master)
 <!-- badges: end -->
 
 The goal of camelUp is to implement the board game CamelUp and include

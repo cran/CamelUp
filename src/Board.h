@@ -34,6 +34,8 @@ public:
 
   ~Board(){}
 
+  void shuffleDice();
+
   int getNDiceRemaining();
 
   void resetDice();

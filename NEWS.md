@@ -1,3 +1,6 @@
+# CamelUp 2.0.3
+Remove random_shuffle to remain on CRAN. Fix bug at the end of turns.
+
 # CamelUp 2.0.2
 Resolved remaining memory leak issues.
 
